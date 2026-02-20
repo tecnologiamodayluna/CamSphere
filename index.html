@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Encuentra webcams en vivo — latinas, parejas, amateur y más.">
+<meta name="keywords" content="cams, live, modelos, latinas, parejas, amateur, trans">
+<title id="page-title">CamsFinder - Inicio</title>
+<style>
+:root {
+  --bg:#121212; --fg:#e0e0e0;
+  --accent:#1e88e5; --card-bg:#1e1e1e;
+}
+body{margin:0;font-family:Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);}
+header{background:var(--card-bg);padding:10px 20px;display:flex;align-items:center;flex-wrap:wrap;}
+header .logo{font-size:1.5rem;font-weight:bold;color:var(--accent);}
+header nav{margin-left:auto;}
+header nav a{color:var(--fg);margin:0 8px;text-decoration:none;}
+header input[type=search]{margin-left:20px;padding:5px;}
+#filters{padding:10px;display:flex;flex-wrap:wrap;gap:10px;background:var(--card-bg);}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;padding:10px;}
+.card{background:var(--card-bg);border-radius:6px;overflow:hidden;text-align:center;}
+.card img{width:100%;height:auto;}
+.card .info{padding:8px;}
+.card button{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:4px;cursor:pointer;}
+#pagination{display:flex;justify-content:center;gap:10px;padding:10px;}
+footer{background:var(--card-bg);padding:20px;text-align:center;font-size:.9rem;}
+.cookie-banner{position:fixed;bottom:0;left:0;width:100%;background:#333;color:#fff;padding:10px;display:flex;justify-content:space-between;align-items:center;}
+.hidden{display:none;}
+.dmca-section, .age-section {padding:20px;background:var(--card-bg);margin:20px;color:var(--fg);}
+a {color:var(--accent);}
+@media(max-width:600px){header{flex-direction:column;align-items:flex-start;}header input{margin:10px 0 0;}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">CamsFinder</div>
+  <input type="search" id="search" placeholder="Buscar nombre...">
+  <nav>
+    <a href="/latinas">Latinas</a>
+    <a href="/parejas">Parejas</a>
+    <a href="/amateur">Amateur</a>
+    <a href="/usa">USA</a>
+    <a href="/europa">Europa</a>
+    <a href="/trans">Trans</a>
+    <a href="#dmca">DMCA</a>
+  </nav>
+</header>
+
+<div id="filters">
+  <select id="country"><option value="">País</option><option>USA</option><option>Colombia</option><option>España</option></select>
+  <select id="gender"><option value="">Género</option><option>Femenino</option><option>Masculino</option><option>Pareja</option><option>Trans</option></select>
+  <input type="number" id="minAge" placeholder="Edad min" min="18" style="width:80px;">
+  <input type="number" id="maxAge" placeholder="Edad max" min="18" style="width:80px;">
+</div>
+
+<section id="grid"></section>
+
+<div id="pagination">
+  <button id="prev">Anterior</button>
+  <button id="next">Siguiente</button>
+</div>
+
+<footer>
+  <a href="#age">+18</a> | <a href="#dmca">DMCA</a> | <a href="#privacy">Política de privacidad</a> | <a href="#cookies">Cookies</a>
+  <p>&copy; 2026 CamsFinder</p>
+</footer>
+
+<div class="cookie-banner hidden" id="cookieBanner">
+  <span>Este sitio usa cookies para mejorar tu experiencia. <a href="#cookies">Ver política</a>.</span>
+  <button id="acceptCookies">Aceptar</button>
+</div>
+
+<section class="dmca-section hidden" id="dmca">
+  <h2>DMCA</h2>
+  <p>Contenido de la página DMCA...</p>
+</section>
+
+<section class="age-section hidden" id="age">
+  <h2>Aviso de Edad</h2>
+  <p>Debes ser mayor de 18 años para acceder a este sitio.</p>
+</section>
+
+<script>
+// --- state ---
+let currentPage=1;
+const pageSize=20;
+let models=[];
+
+// --- helpers ---
+function updateTitle() {
+  const path=location.pathname.replace(/^\/+/,'' )||'inicio';
+  const cap=path.charAt(0).toUpperCase()+path.slice(1);
+  document.getElementById('page-title').textContent=`CamsFinder - ${cap}`;
+  document.querySelector('meta[name=description]').setAttribute('content',`Modelos en vivo categoría ${cap}`);
+}
+function showSection(id){ document.getElementById(id).classList.remove('hidden'); }
+function hideSection(id){ document.getElementById(id).classList.add('hidden'); }
+
+// --- fetch ---
+async function fetchModels() {
+  const apiKey='TU_API_KEY';
+  const token='TU_TOKEN';
+  const url=`https://api.crakrevenue.com/models?page=${currentPage}&key=${apiKey}`;
+  try {
+    const res=await fetch(url,{headers:{'Authorization':`Bearer ${token}`}});
+    const data=await res.json();
+    models=data.models||[];
+    renderCards(models);
+  } catch(e){
+    console.error(e);
+    renderCards([]); // fallback empty
+  }
+}
+
+// --- render ---
+function renderCards(list) {
+  const grid=document.getElementById('grid');
+  grid.innerHTML=list.map(m=>`
+    <div class="card">
+      <img src="${m.thumbnail||'https://via.placeholder.com/200'}" alt="${m.name}">
+      <div class="info">
+        <div>${m.name||'Desconocido'}, ${m.age||'--'}</div>
+        <button onclick="window.open('${m.affiliate || '#'}','_blank')">Ver en vivo</button>
+      </div>
+    </div>`).join('');
+}
+
+// --- filter/search ---
+function applyFilters() {
+  let filtered=models.slice();
+  const country=document.getElementById('country').value;
+  const gender=document.getElementById('gender').value;
+  const minA=parseInt(document.getElementById('minAge').value) || 0;
+  const maxA=parseInt(document.getElementById('maxAge').value) || 100;
+  const nameQ=document.getElementById('search').value.toLowerCase();
+
+  if(country) filtered=filtered.filter(m=>m.country===country);
+  if(gender) filtered=filtered.filter(m=>m.gender===gender);
+  filtered=filtered.filter(m=>m.age>=minA && m.age<=maxA);
+  if(nameQ) filtered=filtered.filter(m=>m.name.toLowerCase().includes(nameQ));
+  renderCards(filtered);
+}
+
+// --- pagination handlers ---
+document.getElementById('prev').addEventListener('click',()=>{
+  if(currentPage>1){ currentPage--; fetchModels(); }
+});
+document.getElementById('next').addEventListener('click',()=>{
+  currentPage++; fetchModels();
+});
+
+// attach filters
+['country','gender','minAge','maxAge'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',applyFilters);
+});
+document.getElementById('search').addEventListener('input',applyFilters);
+
+// cookie consent
+document.getElementById('acceptCookies').addEventListener('click',()=>{
+  localStorage.setItem('cookiesAccepted','1');
+  document.getElementById('cookieBanner').classList.add('hidden');
+});
+if(!localStorage.getItem('cookiesAccepted')) document.getElementById('cookieBanner').classList.remove('hidden');
+
+// navigation for anchors
+window.addEventListener('hashchange',()=>{
+  ['dmca','age'].forEach(id=>hideSection(id));
+  const h=location.hash.replace('#','');
+  if(h==='dmca'||h==='age') showSection(h);
+});
+
+// init
+updateTitle();
+fetchModels();
+</script>
+</body>
+</html>
+cd "C:\Users\LUIS-GABRIEL\Pagina Web Dating"
+git init
+git add .
+git commit -m "Primer sitio web"
+git branch -M main
+git remote add origin https://github.com/tecnologiamodayluna/CamSphere.git
+git push -u origin main
